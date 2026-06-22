@@ -1,0 +1,139 @@
+# Scoring rubric for the lead-gen orchestrator.
+#
+# Score = sum(matched signals) with anti-fits applied.
+# Anti-fits force score to 0 → bucket = irrelevant regardless of other signals.
+#
+# Scoring breakdown is written into the xlsx for every post so a reviewer
+# can see WHY a post got 7 — and argue with the weights, not the gut feeling.
+#
+# To tune: edit weights here. Orchestrator reloads on every run.
+
+intent_signals:
+  # Pattern matches against (title + body_text), case-insensitive.
+  # Replace the regex examples with patterns that match real intent in your
+  # niche. Each named bucket contributes its `weight` once if any pattern hits.
+
+  direct_provider_request:
+    weight: 3
+    patterns:
+      # Examples — replace with patterns specific to your category.
+      # - "looking for .* (your-product-keyword)"
+      # - "(recommend|recommendation) .* (your-product|provider)"
+      # - "best .* (your-product|provider)"
+      # - "(what|which) (provider|service|platform)"
+      # - "(any )?(good|reliable|cheap|trusted) (your-product-keyword)"
+      []
+
+  specific_budget:
+    weight: 2
+    patterns:
+      - "\\$\\s?\\d+(\\.\\d+)?"               # $30, $1.50
+      - "\\d+\\s?\\$"                         # 30$, 1.50$
+      - "(\\d+)\\s?(usd|eur|gbp|€|£)"         # 30 usd, 30€
+      - "(budget|бюджет).{0,30}\\d"           # "budget around 50", "бюджет 30"
+      - "per\\s?(month|gb|user|seat)"         # per month, per GB
+
+  pain_with_current_setup:
+    weight: 2
+    patterns:
+      - "(too )?expensive"
+      - "(doesn'?t|don'?t|didn'?t) work"
+      - "no longer works?"
+      - "stopped working"
+      - "(none|nothing) (work|works)"
+      - "issues? with"
+      # - add category-specific pain phrases here
+      # - "getting blocked", "rate[- ]limited", etc.
+
+  open_question:
+    weight: 1
+    patterns:
+      - "^\\s*(how|what|which|why|where|are|do|does|did|can|could|would|should|when).*\\?"
+      - "(have you|has anyone)"
+      - "what'?s your (stack|setup|approach|experience)"
+      - "share (your|some) experience"
+
+  # use_case_match and named_competitor are derived from entities.yml at runtime —
+  # see "computed_signals" below.
+
+computed_signals:
+  # These signals don't have static patterns — orchestrator computes them
+  # from entities.yml. Listed here just so the weight is configurable.
+  named_competitor:
+    weight: 2
+    description: "Mention of a brand listed in entities.yml::competitors"
+
+  use_case_match:
+    weight: 2
+    description: |
+      Use case detected from text matches one of the keywords/patterns
+      hard-coded in orchestrator.py::Scorer._detect_use_cases.
+      Edit that method to add use cases for your niche.
+
+subreddit_context:
+  # Per-sub bonus/penalty. Keys must match `subreddit_buckets` below.
+  # Tune these to bias toward your strongest subs.
+  core: 1
+  competitor_brand: 0.5
+  adjacent_useful: 0.5
+  adjacent_lowfit: -1
+  off_topic: -2
+
+# Mapping subreddit slugs to context buckets above.
+# Sub names lowercased — orchestrator lowercases on match.
+subreddit_buckets:
+  core:
+    # - yourtargetsubreddit
+    []
+  competitor_brand:
+    # - competitor1official
+    []
+  adjacent_useful:
+    # Subs where your audience hangs out tangentially.
+    []
+  adjacent_lowfit:
+    # Subs that look related but rarely yield qualified leads.
+    []
+  off_topic:
+    # Subs to deprioritize entirely.
+    []
+
+anti_fits:
+  # Each anti-fit, if matched, forces score → 0 (bucket = irrelevant).
+  # Use these to filter out request shapes you can't / won't serve.
+  #
+  # Example shape — edit the patterns to match unservable requests in your niche.
+
+  # request_we_cannot_fulfill:
+  #   description: "Asks for a feature you don't offer"
+  #   patterns:
+  #     - "specific-feature-you-don't-have"
+
+  vendor_self_promo:
+    description: "Author listed in entities.yml::vendor_blogs"
+    # Matched programmatically against post.author — no patterns here.
+
+negative_signals:
+  cross_post_duplicate:
+    weight: -2
+    description: "Same author + similar title in another sub within ~24h"
+
+  off_topic_landed:
+    weight: -10
+    description: |
+      Post in a `core` sub but NONE of entities.yml::domain_keywords
+      appears in title+body. Catches spam accounts dropping unrelated
+      content into your niche.
+
+  news_or_regulatory:
+    weight: -5
+    patterns:
+      # Replace with regulatory/news patterns relevant to your category.
+      # - "(uk|us|eu|govt|government)\\s+(law|act|regulation)"
+      # - "age\\s+verification"
+      []
+
+bucket_cutoffs:
+  relevant: 6      # score >= 6
+  borderline: 2    # 2 <= score < 6
+  # else: irrelevant

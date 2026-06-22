@@ -1,0 +1,51 @@
+# Curated registry of named entities in your niche.
+#
+# This file is for **recognizing context** in posts, NOT for blacklisting authors.
+# Edit it manually whenever you spot a new competitor / influencer / vendor-blogger.
+#
+# How each section is used:
+#   competitors          → mention in title/body adds +2 (named_competitor signal)
+#   antidetect_browsers  → mention adds +2 (use_case_match contribution)
+#                          Repurpose this section for any "tooling tier" relevant
+#                          to your category, or leave empty.
+#   opinion_leaders      → posts by these authors get +1 visibility-score boost
+#   vendor_blogs         → posts by these authors trigger anti-fit "vendor_self_promo"
+#                          (force bucket=irrelevant — their posts are content marketing,
+#                          not real questions)
+#   domain_keywords      → used for off_topic_landed detection (post in a `core` sub
+#                          but contains NONE of these → -10 penalty)
+
+competitors:
+  # Each entry: {name: ..., aliases: [...]}
+  # Aliases are lowercased and matched as substrings (with word boundaries).
+  # Example:
+  # - name: CompetitorOne
+  #   aliases: [competitor-one, "competitor one", competitorone]
+  # - name: CompetitorTwo
+  #   aliases: [competitortwo]
+  []
+
+antidetect_browsers:
+  # Optional secondary tooling list. Mention → use_case_match (+2).
+  # Repurpose for whatever "ecosystem signal" is relevant in your category,
+  # or leave empty.
+  []
+
+opinion_leaders:
+  # Authors whose posts are worth commenting on for visibility even at low intent.
+  # Username without /u/ prefix.
+  []
+
+vendor_blogs:
+  # Authors who systematically post their content marketing.
+  # Their posts trigger anti-fit "vendor_self_promo" → bucket=irrelevant.
+  # Username without /u/ prefix.
+  []
+
+domain_keywords:
+  # If a post is in a `core` sub but contains NONE of these tokens
+  # in title+body — it's likely off-topic noise (anti-fit).
+  # Lowercased substring match with word boundaries.
+  # Add the 10-30 most discriminating tokens for your category.
+  # Example: ["pricing", "self-hosted", "your-product-name"]
+  []
